@@ -9,52 +9,62 @@ namespace CourseEnrollment.Controllers
     [Route("api/[controller]")]
     public class CoursesController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
 
-        public CoursesController(AppDbContext context)
+        public CoursesController(AppDbContext db)
         {
-            _context = context;
+            _db = db;
         }
 
         [HttpGet]
-        public async Task<IEnumerable<Course>> GetCourses()
-            => await _context.Courses.ToListAsync();
+        public async Task<IEnumerable<CourseDto>> GetAll()
+        {
+            return await _db.Courses
+                .Select(c => new CourseDto { Id = c.Id, Name = c.Name })
+                .ToListAsync();
+        }
+
+        [HttpGet("student/{studentId}")]
+        public async Task<IEnumerable<CourseDto>> GetStudentCourses(int studentId)
+        {
+            return await _db.Enrollments
+                .Where(e => e.StudentId == studentId)
+                .Select(e => new CourseDto { Id = e.Course.Id, Name = e.Course.Name })
+                .ToListAsync();
+        }
 
         [HttpPost("{courseId}/enroll/{studentId}")]
-        public async Task<IActionResult> Enroll(int courseId, int studentId)
+        public IActionResult Enroll(int courseId, int studentId)
         {
-            if (_context.Enrollments.Any(e => e.CourseId == courseId && e.StudentId == studentId))
+            if (_db.Enrollments.Any(e => e.CourseId == courseId && e.StudentId == studentId))
             {
                 return BadRequest("Already enrolled.");
             }
 
-            _context.Enrollments.Add(new CourseEnrollments { CourseId = courseId, StudentId = studentId });
-            await _context.SaveChangesAsync();
+            _db.Enrollments.Add(new CourseEnrollments
+            {
+                CourseId = courseId,
+                StudentId = studentId
+            });
+
+            _db.SaveChanges();
+
             return Ok();
         }
 
         [HttpDelete("{courseId}/unenroll/{studentId}")]
-        public async Task<IActionResult> Unenroll(int courseId, int studentId)
+        public IActionResult Unenroll(int courseId, int studentId)
         {
-            var enrollment = await _context.Enrollments.FindAsync(studentId, courseId);
+            var enrollment = _db.Enrollments.Find(studentId, courseId);
             if (enrollment == null)
             {
                 return NotFound();
             }
 
-            _context.Enrollments.Remove(enrollment);
-            await _context.SaveChangesAsync();
+            _db.Enrollments.Remove(enrollment);
+            _db.SaveChanges();
+
             return Ok();
         }
-
-        [HttpGet("student/{studentId}")]
-        public async Task<IEnumerable<Course>> GetStudentCourses(int studentId)
-        {
-            return await _context.Enrollments
-                .Where(e => e.StudentId == studentId)
-                .Select(e => e.Course)
-                .ToListAsync();
-        }
     }
-
 }

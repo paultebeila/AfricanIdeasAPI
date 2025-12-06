@@ -9,24 +9,14 @@ namespace CourseEnrollment.Structure.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        public DbSet<Student> Students { get; set; }
-        public DbSet<Course> Courses { get; set; }
-        public DbSet<CourseEnrollments> Enrollments { get; set; }
+        public DbSet<Student> Students => Set<Student>();
+        public DbSet<Course> Courses => Set<Course>();
+        public DbSet<CourseEnrollments> Enrollments => Set<CourseEnrollments>();
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            modelBuilder.Entity<CourseEnrollments>()
-                .HasKey(e => new { e.StudentId, e.CourseId });
-
-            modelBuilder.Entity<CourseEnrollments>()
-                .HasOne(e => e.Student)
-                .WithMany(s => s.Enrollments)
-                .HasForeignKey(e => e.StudentId);
-
-            modelBuilder.Entity<CourseEnrollments>()
-                .HasOne(e => e.Course)
-                .WithMany(c => c.Enrollments)
-                .HasForeignKey(e => e.CourseId);
+            builder.Entity<CourseEnrollments>()
+                .HasKey(x => new { x.StudentId, x.CourseId });
         }
     }
 

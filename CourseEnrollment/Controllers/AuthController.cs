@@ -8,39 +8,39 @@ namespace CourseEnrollment.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
 
-        public AuthController(AppDbContext context)
+        public AuthController(AppDbContext db)
         {
-            _context = context;
+            _db = db;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(Student student)
+        public IActionResult Register(Student student)
         {
-            if (_context.Students.Any(s => s.Username == student.Username))
+            if (_db.Students.Any(s => s.Username == student.Username))
             {
-                return BadRequest("User already exists.");
+                return BadRequest("Username already exists.");
             }
 
-            _context.Students.Add(student);
-            await _context.SaveChangesAsync();
-            return Ok(student);
+            _db.Students.Add(student);
+            _db.SaveChanges();
+
+            return Ok(new StudentDto { Id = student.Id, Username = student.Username });
         }
 
         [HttpPost("login")]
         public IActionResult Login(Student student)
         {
-            var existing = _context.Students.FirstOrDefault(s =>
+            var match = _db.Students.FirstOrDefault(s =>
                 s.Username == student.Username && s.Password == student.Password);
 
-            if (existing == null)
+            if (match == null)
             {
-                return Unauthorized();
+                return Unauthorized("Invalid credentials");
             }
 
-            return Ok(existing);
+            return Ok(new StudentDto { Id = match.Id, Username = match.Username });
         }
     }
-
 }
