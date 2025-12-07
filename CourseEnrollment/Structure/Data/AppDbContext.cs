@@ -1,6 +1,5 @@
 ﻿using CourseEnrollment.Structure.Models;
 using Microsoft.EntityFrameworkCore;
-
 using CourseEnrollment.Structure.Models;
 
 namespace CourseEnrollment.Structure.Data
